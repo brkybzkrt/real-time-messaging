@@ -1,13 +1,18 @@
 import express from 'express';
+import http from 'http';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import { apiRoutes } from './routes/index.js';
 import { responseMiddleware } from './middleware/response.middleware.js';
+import initSocket from './socket/index.js';
 dotenv.config();
 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const server = http.createServer(app);
+initSocket(server);   
 
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
@@ -23,7 +28,7 @@ const startServer = async () => {
       await connectDB();
       
       // Start server
-      app.listen(PORT, () => {
+      server.listen(PORT, () => {
         console.log(`Real-time messaging API is running at http://localhost:${PORT}`);
       });
     } catch (error) {
