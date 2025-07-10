@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import { apiRoutes } from './routes/index.js';
 import { responseMiddleware } from './middleware/response.middleware.js';
+import { globalLimiter } from './middleware/rateLimit.middleware.js';
 import initSocket from './socket/index.js';
 import { setupSwagger } from './utils/swagger.js';
 dotenv.config();
@@ -20,6 +21,9 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // Apply response middleware
 app.use(responseMiddleware);
+
+// Apply global rate limiter
+app.use(globalLimiter);
 
 // Setup Swagger
 setupSwagger(app);

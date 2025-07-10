@@ -1,6 +1,7 @@
 import express from 'express';
 import { AuthController } from '../controllers/auth.controller.js';
 import { authenticate, adminOnly } from '../middleware/auth.middleware.js';
+import { loginLimiter } from '../middleware/rateLimit.middleware.js';
 
 const router = express.Router();
 const authController = new AuthController();
@@ -159,7 +160,7 @@ router.post('/register', authController.register);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/login', authController.login);
+router.post('/login', loginLimiter, authController.login);
 
 /**
  * @swagger
