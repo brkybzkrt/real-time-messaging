@@ -14,7 +14,7 @@ export default function registerMessageEvents(io, socket) {
       });
 
       // emit to room (except sender)
-      socket.to(conversationId).emit('message_received_notification', {
+      socket.to(conversationId).emit('message_received', {
         _id:     message._id,
         sender:  socket.user._id,
         content, 

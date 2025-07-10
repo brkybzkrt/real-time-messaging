@@ -7,6 +7,11 @@ import { responseMiddleware } from './middleware/response.middleware.js';
 import { globalLimiter } from './middleware/rateLimit.middleware.js';
 import initSocket from './socket/index.js';
 import { setupSwagger } from './utils/swagger.js';
+
+import './rabbitmq/message.consumer.js';
+import './jobs/plan.auto.messages.js';
+import './jobs/enqueue.auto.messages.js';
+
 dotenv.config();
 
 

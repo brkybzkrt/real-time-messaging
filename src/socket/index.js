@@ -4,8 +4,21 @@ import redisClient from '../utils/redis.util.js';
 import registerUserEvents    from './user.events.js';
 import registerMessageEvents from './message.events.js';
 
+
+let ioInstance;
+
+export function getIO() {
+  if (!ioInstance) {
+    throw new Error('Socket.IO not initialized!');
+  }
+  return ioInstance;
+}
+
+
 export default function initSocket(server) {
-  const io = new Server(server, { cors: { origin: '*' } });
+  const io = new Server(server, { cors: { origin: '*' },connectionStateRecovery: {} });
+
+  ioInstance = io; 
 
   // Global middleware
   io.use(authenticate);
@@ -13,6 +26,8 @@ export default function initSocket(server) {
   io.on('connection', socket => {
     console.log('User connected');
 
+    socket.join(socket.user._id.toString());
+    console.log("User joined personal room: ", socket.user._id.toString());
     
     redisClient.sAdd('onlineUsers', socket.user._id.toString()).then(async () => {
       const data = await redisClient.sMembers('onlineUsers');
@@ -22,12 +37,11 @@ export default function initSocket(server) {
 
     socket.on('disconnect', () => {
       redisClient.sRem('onlineUsers', socket.user._id.toString()).then(async () => {
+        socket.leave(socket.user._id.toString());
         const data = await redisClient.sMembers('onlineUsers');
         io.emit('onlineUsers', data);
         socket.broadcast.emit('user_offline', socket.user._id.toString());
-
       });
-
     });
 
 
