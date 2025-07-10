@@ -3,7 +3,7 @@ import { authRoutes } from './auth.routes.js';
 import { userRoutes } from './user.routes.js';
 import { messageRoutes } from './message.routes.js';
 import conversationRoutes from './conversation.routes.js';
-import statsRoutes from './stats.routes.js';
+import { statsRoutes } from './stats.routes.js';
 
 const router = express.Router();
 
