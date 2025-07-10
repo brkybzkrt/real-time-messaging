@@ -53,7 +53,7 @@ const userController = new UserController();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/list',authenticate, adminOnly, userController.listUsers);
+router.get('/list',authenticate, userController.listUsers);
 
 /**
  * @swagger
