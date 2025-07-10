@@ -25,21 +25,26 @@ export class AuthController {
       
       const tokens = generateToken(user);
       
-      res.success({
-        statusCode: 201,
-        message: 'User registered successfully',
-        data: {
-          token: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          user: {
-            id: user._id,
-            name: user.name,
-            lastName: user.lastName,
-            email: user.email,
-            role: user.role
+      res
+        .cookie('refreshToken', tokens.refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'Strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
+        })
+        .success({
+          message: 'User registered successfully',
+          data: {
+            token: tokens.accessToken,
+            user: {
+              id: user._id,
+              name: user.name,
+              lastName: user.lastName,
+              email: user.email,
+              role: user.role
+            }
           }
-        }
-      });
+        });
     } catch (error) {
       res.error({
         statusCode: 500,
@@ -94,20 +99,26 @@ export class AuthController {
       user.lastLogin = new Date();
       await user.save();
       
-      res.success({
-        message: 'Login successful',
-        data: {
-          token: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          user: {
-            id: user._id,
-            name: user.name,
-            lastName: user.lastName,
-            email: user.email,
-            role: user.role
+      res
+        .cookie('refreshToken', tokens.refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'Strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        })
+        .success({
+          message: 'Login successful',
+          data: {
+            token: tokens.accessToken,
+            user: {
+              id: user._id,
+              name: user.name,
+              lastName: user.lastName,
+              email: user.email,
+              role: user.role
+            }
           }
-        }
-      });
+  });
     } catch (error) {
       res.error({
         statusCode: 500,
@@ -184,70 +195,53 @@ export class AuthController {
 
   refresh = async (req, res) => {
     try {
-      const { refreshToken } = req.body;
-      
-      if (!refreshToken) {
-        res.error({
+      debugger;
+      let token = req?.cookies?.refreshToken;
+  
+      if (!token) {
+        return res.error({
           statusCode: 400,
-          message: 'Refresh failed: Refresh token is required'
+          message: 'Refresh failed: No refresh token in cookies'
         });
-        return;
       }
-      
-      // Verify refresh token
-      const decoded = verifyRefreshToken(refreshToken);
-      
-      // Find user
+  
+      const decoded = verifyRefreshToken(token);
       const user = await User.findById(decoded.id);
-      if (!user) {
-        res.error({
-          statusCode: 401,
-          message: 'Refresh failed: User not found'
-        });
-        return;
-      }
-      
-      if (!user.isActive) {
-        res.error({
+  
+      if (!user || !user.isActive) {
+        return res.error({
           statusCode: 403,
-          message: 'Refresh failed: Account is deactivated'
+          message: 'Refresh failed: Unauthorized'
         });
-        return;
       }
-      
-      // Generate new tokens
+  
       const tokens = generateToken(user);
-      
-      res.success({
-        message: 'Token refreshed successfully',
-        data: {
-          token: tokens.accessToken,
-          refreshToken: tokens.refreshToken
-        }
-      });
-    } catch (error) {
-      if (error.name === 'TokenExpiredError') {
-        res.error({
-          statusCode: 401,
-          message: 'Refresh failed: Refresh token expired'
+  
+      res
+        .success({
+          message: 'Token refreshed successfully',
+          data: {
+            token: tokens.accessToken
+          }
         });
-        return;
-      }
-      
-      res.error({
+  
+    } catch (error) {
+      return res.error({
         statusCode: 401,
-        message: 'Refresh failed: Invalid refresh token',
+        message: 'Refresh failed',
         errors: error
       });
     }
   };
-
+  
   logout = async (req, res) => {
     try {
-      // In a real application, you would invalidate the token here
-      // This could be done by adding it to a blacklist in Redis or similar
-      // For now, we'll just return a success message
-      
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict',
+      });
+  
       res.success({
         message: 'Logged out successfully'
       });
